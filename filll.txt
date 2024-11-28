@@ -1,0 +1,48 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def high_pass_filter(image, kernel):
+    image_height, image_width = image.shape
+    kernel_height, kernel_width = kernel.shape
+
+    pad_height, pad_width = kernel_height // 2, kernel_width // 2
+    padded_image = np.pad(image, ((pad_height, pad_height), (pad_width, pad_width)), mode='constant')
+
+    filtered_image = np.zeros_like(image)
+
+    for i in range(image_height):
+        for j in range(image_width):
+            region = padded_image[i:i + kernel_height, j:j + kernel_width]
+            filtered_image[i, j] = np.sum(region * kernel)
+
+    return np.clip(filtered_image, 0, 255)
+
+def high_boost_filter(image, kernel, k=1.5):
+    high_pass_image = high_pass_filter(image, kernel)
+
+    high_boost_image = np.clip(image + k * high_pass_image, 0, 255)
+    return high_boost_image
+
+kernel = np.array([[-1, -1, -1],
+                   [-1,  8, -1],
+                   [-1, -1, -1]])
+
+gaussian_high_pass = high_pass_filter(random_image, kernel)
+gaussian_high_boost = high_boost_filter(random_image, kernel, k=1.5)
+
+fig, axes = plt.subplots(1, 3, figsize=(12, 6))
+
+axes[0].imshow(random_image, cmap='gray')
+axes[0].set_title("Original Image")
+axes[0].axis('off')
+
+axes[1].imshow(gaussian_high_pass, cmap='gray')
+axes[1].set_title("High Pass Filter")
+axes[1].axis('off')
+
+axes[2].imshow(gaussian_high_boost, cmap='gray')
+axes[2].set_title("High Boost Filter")
+axes[2].axis('off')
+
+plt.tight_layout()
+plt.show()

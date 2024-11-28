@@ -1,0 +1,93 @@
+import pandas as pd
+from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
+
+file_path = "/content/mnist_test.csv"  
+mnist_data = pd.read_csv(file_path)
+
+random_index = np.random.randint(0, len(mnist_data))  
+
+random_image = mnist_data.iloc[random_index, 1:].values.reshape(28, 28).astype(np.uint8)  
+
+img = Image.fromarray(random_image)
+
+def add_gaussian_noise(image, mean=0, std=25):
+    gaussian = np.random.normal(mean, std, image.shape)
+    noisy_image = np.clip(image + gaussian, 0, 255).astype(np.uint8)
+    return noisy_image
+
+def add_salt_pepper_noise(image, salt_prob=0.02, pepper_prob=0.02):
+    noisy_image = image.copy()
+    total_pixels = image.size
+    salt_pixels = int(salt_prob * total_pixels)
+    pepper_pixels = int(pepper_prob * total_pixels)
+
+    salt_coords = [np.random.randint(0, i-1, salt_pixels) for i in image.shape]
+    noisy_image[salt_coords[0], salt_coords[1]] = 255
+
+    pepper_coords = [np.random.randint(0, i-1, pepper_pixels) for i in image.shape]
+    noisy_image[pepper_coords[0], pepper_coords[1]] = 0
+
+    return noisy_image
+
+def apply_average_filter(image, kernel_size=3):
+    padded_image = np.pad(image, pad_width=kernel_size//2, mode='constant', constant_values=0)
+    filtered_image = np.zeros_like(image)
+
+    for i in range(image.shape[0]):
+        for j in range(image.shape[1]):
+            region = padded_image[i:i+kernel_size, j:j+kernel_size]
+            filtered_image[i, j] = np.mean(region)
+    return filtered_image
+
+def apply_median_filter(image, kernel_size=3):
+    padded_image = np.pad(image, pad_width=kernel_size//2, mode='constant', constant_values=0)
+    filtered_image = np.zeros_like(image)
+
+    for i in range(image.shape[0]):
+        for j in range(image.shape[1]):
+            region = padded_image[i:i+kernel_size, j:j+kernel_size]
+            filtered_image[i, j] = np.median(region)
+    return filtered_image
+
+gaussian_noisy_image = add_gaussian_noise(random_image)
+salt_pepper_noisy_image = add_salt_pepper_noise(random_image)
+
+gaussian_median_filtered = apply_median_filter(gaussian_noisy_image)
+gaussian_average_filtered = apply_average_filter(gaussian_noisy_image)
+salt_pepper_median_filtered = apply_median_filter(salt_pepper_noisy_image)
+salt_pepper_average_filtered = apply_average_filter(salt_pepper_noisy_image)
+
+fig, axes = plt.subplots(2, 4, figsize=(15, 8))
+
+axes[0, 0].imshow(random_image, cmap='gray')
+axes[0, 0].set_title("Original Image")
+axes[0, 0].axis('off')
+
+axes[0, 1].imshow(gaussian_noisy_image, cmap='gray')
+axes[0, 1].set_title("Gaussian Noisy Image")
+axes[0, 1].axis('off')
+
+axes[0, 2].imshow(salt_pepper_noisy_image, cmap='gray')
+axes[0, 2].set_title("Salt-Pepper Noisy Image")
+axes[0, 2].axis('off')
+
+axes[0, 3].imshow(gaussian_median_filtered, cmap='gray')
+axes[0, 3].set_title("Median Filter (Gaussian)")
+axes[0, 3].axis('off')
+
+axes[1, 0].imshow(gaussian_average_filtered, cmap='gray')
+axes[1, 0].set_title("Average Filter (Gaussian)")
+axes[1, 0].axis('off')
+
+axes[1, 1].imshow(salt_pepper_median_filtered, cmap='gray')
+axes[1, 1].set_title("Median Filter (Salt-Pepper)")
+axes[1, 1].axis('off')
+
+axes[1, 2].imshow(salt_pepper_average_filtered, cmap='gray')
+axes[1, 2].set_title("Average Filter (Salt-Pepper)")
+axes[1, 2].axis('off')
+
+plt.tight_layout()
+plt.show()

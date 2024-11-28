@@ -1,0 +1,61 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image
+
+def get_pixel_frequency(image):
+    pixel_frequency = np.zeros(256)
+    for row in range(image.shape[0]):
+        for col in range(image.shape[1]):
+            pixel_val = image[row][col]
+            pixel_frequency[pixel_val] += 1
+    return pixel_frequency
+
+def histogram_equalization(image):
+    flat_image = image.flatten()
+    pixel_frequency = get_pixel_frequency(image)
+    pixel_pdf = pixel_frequency / np.sum(pixel_frequency)
+    pixel_cumsum = np.cumsum(pixel_pdf)
+    L = 256
+    pixel_map = np.fix((L - 1) * pixel_cumsum).astype(int)
+    equalized_image = np.interp(flat_image, np.arange(256), pixel_map)
+    return equalized_image.reshape(image.shape).astype(np.uint8)
+
+def histogram_stretching(image):
+    min_val = np.min(image)
+    max_val = np.max(image)
+    stretched_img = (image - min_val) * (255 / (max_val - min_val))
+    return np.uint8(stretched_img)
+
+img = np.array(img)
+
+equalized_img = histogram_equalization(img)
+stretched_img = histogram_stretching(img)
+original_histogram = np.histogram(img, bins=256, range=(0, 256))[0]
+equalized_histogram = np.histogram(equalized_img, bins=256, range=(0, 256))[0]
+stretched_histogram = np.histogram(stretched_img, bins=256, range=(0, 256))[0]
+
+fig, axes = plt.subplots(1, 3, figsize=(12, 6))
+axes[0].imshow(img, cmap='gray')
+axes[0].set_title("Original Image")
+axes[0].axis('off')
+axes[1].imshow(equalized_img, cmap='gray')
+axes[1].set_title("Equalized Image")
+axes[1].axis('off')
+axes[2].imshow(stretched_img, cmap='gray')
+axes[2].set_title("Stretched Image")
+axes[2].axis('off')
+plt.tight_layout()
+plt.show()
+
+fig, axes = plt.subplots(1, 3, figsize=(12, 6))
+axes[0].bar(range(256), original_histogram, color='gray', alpha=0.7)
+axes[0].set_title("Original Histogram")
+axes[0].set_xlim([0, 255])
+axes[1].bar(range(256), equalized_histogram, color='gray', alpha=0.7)
+axes[1].set_title("Equalized Histogram")
+axes[1].set_xlim([0, 255]))
+axes[2].bar(range(256), stretched_histogram, color='gray', alpha=0.7)
+axes[2].set_title("Stretched Histogram")
+axes[2].set_xlim([0, 255])
+plt.tight_layout()
+plt.show()

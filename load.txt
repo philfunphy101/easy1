@@ -1,0 +1,18 @@
+import pandas as pd
+from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+file_path = "/content/mnist_test.csv" 
+mnist_data = pd.read_csv(file_path)
+
+random_index = np.random.randint(0, len(mnist_data))  
+
+random_image = mnist_data.iloc[random_index, 1:].values.reshape(28, 28).astype(np.uint8)  # Skip label column
+
+img = Image.fromarray(random_image)
+
+plt.imshow(img, cmap="gray")
+plt.title(f"Random Image at Index {random_index}")
+plt.show()

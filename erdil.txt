@@ -1,0 +1,95 @@
+import numpy as np
+import matplotlib.pyplot as plt
+img = np.array(img)
+def erosion(image, se):
+    img_h, img_w = image.shape
+    se_h, se_w = se.shape
+    se_center_h, se_center_w = se_h // 2, se_w // 2
+    eroded_image = np.full_like(image, 255) 
+    for i in range(se_center_h, img_h - se_center_h):
+        for j in range(se_center_w, img_w - se_center_w):
+            local_min = 255
+            for k in range(se_h):
+                for l in range(se_w):
+                    if se[k, l] == 1:
+                        local_min = min(local_min, image[i - se_center_h + k, j - se_center_w + l])
+            eroded_image[i, j] = local_min
+    return eroded_image
+
+def dilation(image, se):
+    img_h, img_w = image.shape
+    se_h, se_w = se.shape
+    se_center_h, se_center_w = se_h // 2, se_w // 2
+    dilated_image = np.full_like(image, 0) 
+    for i in range(se_center_h, img_h - se_center_h):
+        for j in range(se_center_w, img_w - se_center_w):
+            local_max = 0
+            for k in range(se_h):
+                for l in range(se_w):
+                    if se[k, l] == 1:
+                        local_max = max(local_max, image[i - se_center_h + k, j - se_center_w + l])
+            dilated_image[i, j] = local_max
+    return dilated_image
+
+def opening(image, se):
+    return dilation(erosion(image, se), se)
+
+def closing(image, se):
+    return erosion(dilation(image, se), se)
+
+def hit_and_miss(image, se1, se2):
+    eroded1 = erosion(image, se1)
+    eroded2 = erosion(255 - image, se2)
+    return np.where(eroded1 == 0, 0, eroded2)
+
+se = np.array([
+    [1, 1, 1],
+    [1, 1, 1],
+    [1, 1, 1]
+])
+
+eroded_image = erosion(img, se)
+dilated_image = dilation(img, se)
+opened_image = opening(img, se)
+closed_image = closing(img, se)
+
+se1 = np.array([
+    [1, 1],
+    [0, 1]
+])
+
+se2 = np.array([
+    [1, 0],
+    [1, 1]
+])
+
+hit_and_miss_image = hit_and_miss(img, se1, se2)
+
+fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+
+axes[0, 0].imshow(img, cmap='gray')
+axes[0, 0].set_title("Original Image")
+axes[0, 0].axis('off')
+
+axes[0, 1].imshow(eroded_image, cmap='gray')
+axes[0, 1].set_title("Erosion")
+axes[0, 1].axis('off')
+
+axes[0, 2].imshow(dilated_image, cmap='gray')
+axes[0, 2].set_title("Dilation")
+axes[0, 2].axis('off')
+
+axes[1, 0].imshow(opened_image, cmap='gray')
+axes[1, 0].set_title("Opening")
+axes[1, 0].axis('off')
+
+axes[1, 1].imshow(closed_image, cmap='gray')
+axes[1, 1].set_title("Closing")
+axes[1, 1].axis('off')
+
+axes[1, 2].imshow(hit_and_miss_image, cmap='gray')
+axes[1, 2].set_title("Hit-and-Miss")
+axes[1, 2].axis('off')
+
+plt.tight_layout()
+plt.show()

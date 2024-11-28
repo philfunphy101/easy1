@@ -1,0 +1,86 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from numpy.fft import fft2, ifft2
+
+img = np.array(img)
+
+import numpy as np
+from numpy.fft import fft2
+
+def fourier_transform(image):
+    rows, cols = image.shape
+    x_coords, y_coords = np.meshgrid(np.arange(cols), np.arange(rows))
+    centered_img = image * (-1)**(x_coords + y_coords)
+    fourier_transformed_image = fft2(centered_img)
+    return fourier_transformed_image, x_coords, y_coords
+
+def ideal_low_pass_filter(fourier_image, cutoff_radius):
+    rows, cols = fourier_image.shape
+    u = np.fft.fftfreq(cols, 1) 
+    v = np.fft.fftfreq(rows, 1)  
+    U, V = np.meshgrid(u, v)
+    distance = np.sqrt(U**2 + V**2)
+    low_pass_mask = distance <= cutoff_radius
+    filtered_image = fourier_image * low_pass_mask
+    return np.abs(ifft2(filtered_image))
+
+def ideal_high_pass_filter(fourier_image, cutoff_radius):
+    rows, cols = fourier_image.shape
+    u = np.fft.fftfreq(cols, 1)
+    v = np.fft.fftfreq(rows, 1)
+    U, V = np.meshgrid(u, v)
+    distance = np.sqrt(U**2 + V**2)
+    high_pass_mask = distance >= cutoff_radius
+    filtered_image = fourier_image * high_pass_mask
+    return np.abs(ifft2(filtered_image))
+
+def gaussian_low_pass_filter(fourier_image, cutoff_radius):
+    rows, cols = fourier_image.shape
+    u = np.fft.fftfreq(cols, 1)
+    v = np.fft.fftfreq(rows, 1)
+    U, V = np.meshgrid(u, v)
+    distance = np.sqrt(U**2 + V**2)
+    gaussian_mask = np.exp(-distance**2 / (2 * cutoff_radius**2))
+    filtered_image = fourier_image * gaussian_mask
+    return np.abs(ifft2(filtered_image))
+
+def gaussian_high_pass_filter(fourier_image, cutoff_radius):
+    rows, cols = fourier_image.shape
+    u = np.fft.fftfreq(cols, 1)
+    v = np.fft.fftfreq(rows, 1)
+    U, V = np.meshgrid(u, v)
+    distance = np.sqrt(U**2 + V**2)
+    gaussian_mask = 1 - np.exp(-distance**2 / (2 * cutoff_radius**2))
+    filtered_image = fourier_image * gaussian_mask
+    return np.abs(ifft2(filtered_image))
+
+ft_image, x_co, y_co = fourier_transform(img)
+
+low_pass_result = ideal_low_pass_filter(ft_image, 0.5)
+high_pass_result = ideal_high_pass_filter(ft_image, 0.1)
+gaussian_low_pass_result = gaussian_low_pass_filter(ft_image, 0.1)
+gaussian_high_pass_result = gaussian_high_pass_filter(ft_image, 0.1)
+
+fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+axes[0, 0].imshow(np.abs(ft_image), cmap='gray')
+axes[0, 0].set_title("Fourier Transform")
+axes[0, 0].axis('off')
+
+axes[0, 1].imshow(low_pass_result, cmap='gray')
+axes[0, 1].set_title("Ideal Low Pass Filter")
+axes[0, 1].axis('off')
+
+axes[0, 2].imshow(high_pass_result, cmap='gray')
+axes[0, 2].set_title("Ideal High Pass Filter")
+axes[0, 2].axis('off')
+
+axes[1, 0].imshow(gaussian_low_pass_result, cmap='gray')
+axes[1, 0].set_title("Gaussian Low Pass Filter")
+axes[1, 0].axis('off')
+
+axes[1, 1].imshow(gaussian_high_pass_result, cmap='gray')
+axes[1, 1].set_title("Gaussian High Pass Filter")
+axes[1, 1].axis('off')
+
+plt.tight_layout()
+plt.show()

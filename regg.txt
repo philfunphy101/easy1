@@ -1,0 +1,68 @@
+import numpy as np
+
+def region_growing(image, seed, threshold_value):
+    height, width = image.shape
+    region_grown_image = np.zeros_like(image)
+    region_grown_image[seed] = 255  
+    region_mean = image[seed]
+
+    pixels_to_explore = [seed]
+    
+    while pixels_to_explore:
+        x, y = pixels_to_explore.pop(0)
+
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < height and 0 <= ny < width and region_grown_image[nx, ny] == 0:
+                diff = abs(int(image[nx, ny]) - int(region_mean))
+                if diff <= threshold_value:
+                    region_grown_image[nx, ny] = 255
+                    pixels_to_explore.append((nx, ny))
+
+    return region_grown_image
+
+def merge_split_regions(image, threshold_value):
+    height, width = image.shape
+    labeled_image = np.zeros_like(image)
+    label = 1
+
+    for i in range(height):
+        for j in range(width):
+            if labeled_image[i, j] == 0: 
+                region = region_growing(image, (i, j), threshold_value)
+                if np.any(region):
+                    labeled_image[region == 255] = label
+                    label += 1
+
+    merged_image = np.zeros_like(image)
+    for l in range(1, label):
+        region = (labeled_image == l).astype(np.uint8) * 255
+        if np.mean(image[region == 255]) < threshold_value:
+            merged_image[region == 255] = 255
+
+    return merged_image
+
+seed = (12, 12)  
+
+threshold_value = 30
+
+region_grown_image = region_growing(img, seed, threshold_value)
+
+merged_image = merge_split_regions(img, threshold_value)
+
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+axes[0].imshow(img, cmap='gray')
+axes[0].set_title("Original Image")
+axes[0].axis('off')
+
+axes[1].imshow(region_grown_image, cmap='gray')
+axes[1].set_title("Region Grown Image")
+axes[1].axis('off')
+
+axes[2].imshow(merged_image, cmap='gray')
+axes[2].set_title("Merged Image")
+axes[2].axis('off')
+
+plt.tight_layout()
+plt.show()
